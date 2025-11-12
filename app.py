@@ -9,7 +9,7 @@ import os
 # Inisialisasi Flask
 app = Flask(__name__)
 
-# Load model SVM yang sudah dilatih
+# Load model SVM
 model_package = joblib.load("svm_model_package.pkl")
 svm_model = model_package['model']
 scaler = model_package['scaler']
@@ -18,7 +18,7 @@ scaler = model_package['scaler']
 mobilenet = MobileNetV2(weights='imagenet', include_top=False, pooling='avg', input_shape=(128,128,3))
 
 
-# Label kelas (ubah sesuai dataset kamu)
+# Label kelas 
 class_labels = ["bersih", "kotor"]
 def extract_feature_single(img_path):
     """Ekstraksi fitur satu gambar (ukuran 128x128)"""
@@ -48,7 +48,7 @@ def predict():
             probabilities = svm_model.decision_function(features).tolist()
         # Ambil nama label prediksi dari indeks
         predicted_index = int(prediction)
-        predicted_label = class_labels[predicted_index]  # ✅ ubah jadi label teks
+        predicted_label = class_labels[predicted_index]  # ubah jadi label teks
         # Ambil nama label prediksi
         result_label = class_labels[int(prediction)] if isinstance(prediction, (int, np.integer)) else prediction
 

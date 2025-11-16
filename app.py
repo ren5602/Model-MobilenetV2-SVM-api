@@ -10,16 +10,17 @@ import os
 app = Flask(__name__)
 
 # Load model SVM
-model_package = joblib.load("svm_model_package.pkl")
+model_package = joblib.load("svm_model_fixed.pkl")
 svm_model = model_package['model']
 scaler = model_package['scaler']
+pca = model_package['pca']
 
-# Load MobileNetV2 tanpa fully connected layer (untuk ekstraksi fitur)
+# Load MobileNetV2 tanpa fully connected layer
 mobilenet = MobileNetV2(weights='imagenet', include_top=False, pooling='avg', input_shape=(128,128,3))
-
 
 # Label kelas 
 class_labels = ["bersih", "kotor"]
+
 def extract_feature_single(img_path):
     """Ekstraksi fitur satu gambar (ukuran 128x128)"""
     img = image.load_img(img_path, target_size=(128, 128))
@@ -28,6 +29,7 @@ def extract_feature_single(img_path):
     img_array = preprocess_input(img_array)  # normalisasi MobileNetV2
     features = mobilenet.predict(img_array, verbose=0)
     return features.reshape(1, -1)
+
 @app.route('/predict', methods=['POST'])
 def predict():
     if 'image' not in request.files:
@@ -40,22 +42,26 @@ def predict():
     try:
         # Ekstraksi fitur dari gambar
         features = extract_feature_single(file_path)
+        
+        # Normalisasi fitur menggunakan scaler
+        features_scaled = scaler.transform(features)
+        
+        # Reduksi dimensi menggunakan PCA
+        features_pca = pca.transform(features_scaled)
 
         # Prediksi dengan model SVM
-        prediction = svm_model.predict(features)[0]
+        prediction = svm_model.predict(features_pca)[0]
         probabilities = None
         if hasattr(svm_model, "decision_function"):
-            probabilities = svm_model.decision_function(features).tolist()
-        # Ambil nama label prediksi dari indeks
+            probabilities = svm_model.decision_function(features_pca).tolist()
+        
         predicted_index = int(prediction)
-        predicted_label = class_labels[predicted_index]  # ubah jadi label teks
-        # Ambil nama label prediksi
-        result_label = class_labels[int(prediction)] if isinstance(prediction, (int, np.integer)) else prediction
+        predicted_label = class_labels[predicted_index]
 
         return jsonify({
             'predicted_label': predicted_label,
             'predicted_index': predicted_index,
-            'confidence_score': probabilities[0] if probabilities else None
+            # 'confidence_score': probabilities[0] if probabilities else None
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500

@@ -1,0 +1,9 @@
+Flask==3.0.0
+numpy==1.26.4
+tensorflow==2.15.0
+joblib==1.4.2
+scikit-learn==1.5.2
+Pillow==10.4.0
+opencv-python-headless==4.10.0.84
+matplotlib==3.8.0
+seaborn==0.13.2
